@@ -63,3 +63,4 @@ class MazeToGraph:
             raise ValueError(f"Nó objetivo {goal} não existe no grafo")
         
         return nx.has_path(self.graph, start, goal)
+    
