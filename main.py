@@ -1,5 +1,15 @@
 import random
 import numpy as np
+import matplotlib
+
+try:
+    matplotlib.use('TkAgg')
+except ImportError:
+    matplotlib.use('Agg')  # fallback sem janela
+
+import matplotlib.pyplot as plt
+
+
 import matplotlib.pyplot as plt
 
 from mazeGen import MazeGenerator
