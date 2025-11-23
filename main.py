@@ -1,159 +1,159 @@
-import argparse
+import gc
 import random
-import time
-import json
-import sys
-from pathlib import Path
 import numpy as np
-
 import matplotlib
 try:
     matplotlib.use('TkAgg')
 except ImportError:
     matplotlib.use('Agg')
 import matplotlib.pyplot as plt
+from matplotlib.gridspec import GridSpec
 
-from agente import MazeSolverAgent
-from metrics import SearchMetrics
-from visualizer import MazeVisualizer
-
-def parse_args():
-    parser = argparse.ArgumentParser(
-        description='Busca A* em Labirinto com NetworkX',
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog="""
-Exemplos:
-  python main.py --width 20 --height 20
-  python main.py --seed 42 --compare
-        """
-    )
-    parser.add_argument('--width', type=int, default=20, help='Largura do labirinto')
-    parser.add_argument('--height', type=int, default=20, help='Altura do labirinto')
-    parser.add_argument('--seed', type=int, default=None, help='Seed para reprodutibilidade')
-    parser.add_argument('--animate', action='store_true', help='Ativar animação')
-    parser.add_argument('--no-animate', dest='animate', action='store_false', help='Desativar animação')
-    parser.add_argument('--animation-speed', type=float, default=0.003, help='Velocidade da animação (s)')
-    parser.add_argument('--compare', action='store_true', help='Comparar algoritmos')
-    parser.add_argument('--save-results', action='store_true', default=True, help='Salvar resultados em JSON')
-    parser.add_argument('--output-dir', type=str, default='results', help='Diretório de saída')
-    parser.set_defaults(animate=True)
-    return parser.parse_args()
-
-def save_results_to_file(agent_results, args, output_dir):
-    output_path = Path(output_dir)
-    output_path.mkdir(exist_ok=True)
-    
-    timestamp = time.strftime("%Y%m%d_%H%M%S")
-    base_name = f"maze_{args.width}x{args.height}_seed{args.seed}_{timestamp}"
-    
-    def convert_to_native(obj):
-        if isinstance(obj, np.integer): return int(obj)
-        elif isinstance(obj, np.floating): return float(obj)
-        elif isinstance(obj, np.ndarray): return obj.tolist()
-        elif isinstance(obj, tuple): return [convert_to_native(item) for item in obj]
-        elif isinstance(obj, list): return [convert_to_native(item) for item in obj]
-        elif isinstance(obj, dict): return {key: convert_to_native(val) for key, val in obj.items()}
-        return obj
-    
-    data = {
-        'config': {'width': args.width, 'height': args.height, 'seed': args.seed},
-        'start': list(agent_results['start']),
-        'goal': list(agent_results['goal']),
-        'algorithms': {}
-    }
-    
-    for algo_name, algo_data in agent_results['algorithms'].items():
-        metrics = algo_data['metrics']
-        data['algorithms'][algo_name] = {
-            'success': bool(metrics.success),
-            'path_length': int(metrics.path_length),
-            'nodes_explored': int(metrics.nodes_explored),
-            'execution_time': float(metrics.execution_time),
-            'path_cost': float(metrics.path_cost)
-        }
-    
-    json_path = output_path / f"{base_name}.json"
-    with open(json_path, 'w', encoding='utf-8') as f:
-        json.dump(convert_to_native(data), f, indent=2)
-    
-    print(f"\n✓ Resultados salvos em: {json_path}")
-    return str(output_path / base_name)
+from mazeGen import MazeGenerator
+from agente import Agente
+from grafos import visualizadorGrafos
+from acoes import VisualizadorAcoes
 
 def main():
-    args = parse_args()
-    
-    print("="*70)
-    print(" BUSCA A* EM LABIRINTO COM NETWORKX".center(70))
-    print("="*70)
-    
-    if args.seed is None:
-        args.seed = random.randint(0, 999999)
-        print(f"→ Seed gerada automaticamente: {args.seed}")
+  
+    # defs labirinto
+    SEED = random.randint(0, 1000)
+    LARGURA = 16
+    ALTURA = 16
 
+    # gera labirinto
+    print(f"Gerando Labirinto {LARGURA}x{ALTURA} (Seed={SEED})")
+    gen1 = MazeGenerator(width=LARGURA, height=ALTURA, seed=SEED)
+    labirinto = gen1.generate()
+  
+    START_POS = (1, 1) 
+    1
+    y_indices, x_indices = np.where(labirinto == gen1.PATH)
+
+    # array lista cordenada 
+    valid_path_coords = list(zip(y_indices, x_indices)) 
+
+    # partida valida se != objetivo
+    if START_POS in valid_path_coords:
+        valid_path_coords.remove(START_POS)
+    random.seed(SEED)
+
+    # escolhe objetivo aleatorio
+    GOAL_POS = random.choice(valid_path_coords)
+
+    print(f"Partida: {START_POS}")
+    print(f"Objetivo: {GOAL_POS}")
+
+    # init agente
+    print(f"Iniciando Agente A* de {START_POS} para {GOAL_POS}")
+    agente = Agente(labirinto, START_POS, GOAL_POS)
+
+    # init visualizadores
+    grafo_vis = visualizadorGrafos(labirinto, START_POS, GOAL_POS)
+    acao_vis = VisualizadorAcoes()
+
+    # cfg animacao
+    plt.rcParams['toolbar'] = 'None'
+    plt.ion() # ativa modo interativo
+    
+    # cria figura 2 subplots
+    fig = plt.figure(figsize=(18, 9))
+    fig.canvas.manager.window.state('zoomed')
+    fig.patch.set_facecolor('white')
+    fig.suptitle(f"Simulação - Seed {SEED}", fontsize=16)
+
+    gs = GridSpec(2, 2, width_ratios=[1, 1.5], height_ratios=[5, 1])
+
+    ax_graph = fig.add_subplot(gs[0, 0])  
+    ax_action = fig.add_subplot(gs[1, 0]) 
+    ax_maze = fig.add_subplot(gs[:, 1])
+
+    ax_graph.axis('off')
+    ax_action.axis('off')
+    ax_maze.axis('off')
+
+    # cfg labirinto dir
+    img_pb = np.stack([labirinto]*3, axis=-1).astype(float)
+    img_visual_base = 1.0 - img_pb 
+    
+    img_plot = ax_maze.imshow(img_visual_base, interpolation='nearest')
+    
+    ax_maze.plot(START_POS[1], START_POS[0], 'bo', markersize=10, label='Início') 
+    ax_maze.plot(GOAL_POS[1], GOAL_POS[0], 'go', markersize=10, label='Fim')   
+    
+    ax_maze.set_title("Visualização do Ambiente")
+
+    # cfg grafo esq
+    grafo_vis.draw_graph(ax_graph, set([START_POS]), [], GOAL_POS, show_all=False)
+
+    # cfg acoes esq baixo
+    acao_vis.draw(ax_action, None, None, None)
+
+    plt.show(block=False)
+    
+    # loop animacao
+    status = "searching"
+    current_visual = None
+
+    current_node = START_POS
+    parent_node = None
+    grandparent_node = None
+    
     try:
-        agent = MazeSolverAgent(args.width, args.height, args.seed)
-        agent.initialize_environment()
+        while status == "searching":
+            status = agente.solve_step()
 
-        print(f"\n{'='*70}")
-        print(" EXECUTANDO BUSCA PRINCIPAL (A*)".center(70))
-        print(f"{'='*70}")
-        astar_result = agent.solve_astar()
-        astar_result['metrics'].print_report("A*")
+            # identifica nos para acoes
+            if agente.came_from:
+                current_node, parent_node = list(agente.came_from.items())[-1]
+                grandparent_node = agente.came_from.get(parent_node)
+            
+            # att labirinto
+            current_visual = np.copy(img_visual_base)
+            
+            # pinta explorados
+            for (y, x) in agente.explored_nodes:
+                if (y, x) != START_POS and (y, x) != GOAL_POS:
+                    current_visual[y, x] = [0.7, 0.7, 0.7] # cinza
+            
+            img_plot.set_data(current_visual)
+            
+            # att grafo
+            grafo_vis.draw_graph(ax_graph, agente.explored_nodes, [], GOAL_POS, show_all=False)
 
-        if args.compare:
-            print(f"\n{'='*70}")
-            print(" COMPARANDO ALGORITMOS".center(70))
-            print(f"{'='*70}")
-            comparison_results = agent.compare_algorithms()
-            for name, data in comparison_results.items():
-                if name != 'A*': 
-                    data['metrics'].print_report(name)
-            agent.print_comparison_table(comparison_results)
+            # att acoes
+            acao_vis.draw(ax_action, grandparent_node, parent_node, current_node)
 
-        print(f"\n{'='*70}")
-        print(" VISUALIZAÇÃO".center(70))
-        print(f"{'='*70}")
-        
-        visualizer = MazeVisualizer(agent.maze, agent.graph, agent.start_pos, agent.goal_pos)
-
-        if args.animate:
-            print("\n→ Iniciando animação da busca A*...")
-            frames = visualizer.animate_search(
-                astar_result['explored'],
-                astar_result['path'],
-                speed=args.animation_speed
-            )
-
-        print("\n→ Gerando imagem final dos resultados...")
-        if args.compare and len(agent.results['algorithms']) > 1:
-             fig_path = visualizer.visualize_comparison(agent.results['algorithms'])
-        else:
-             fig_path = visualizer.visualize_final(astar_result['explored'], astar_result['path'])
-
-        if args.save_results:
-            base_name = save_results_to_file(agent.results, args, args.output_dir)
-            if fig_path:
-                import shutil
-                final_png = f"{base_name}.png"
-                shutil.move(fig_path, final_png)
-                print(f"✓ Imagem salva em: {final_png}")
-
-        print(f"\n{'='*70}")
-        print(" CONCLUÍDO COM SUCESSO".center(70))
-        print(f"{'='*70}")
-        print("Feche a janela da visualização para encerrar.")
-        plt.show()
+            fig.canvas.draw_idle()
+            plt.pause(0.001)
 
     except Exception as e:
-        print(f"\n✗ ERRO CRÍTICO: {e}")
-        import traceback
-        traceback.print_exc()
-        return 1
-    except KeyboardInterrupt:
-        print("\n\n! Interrompido pelo usuário.")
-        return 130
+        print(f"\nSimulação interrompida. {e}")
+        plt.ioff()
+        return
 
-    return 0
+    # resultado
+    if status == "goal_found":
+        fig.suptitle(f"SUCESSO! Caminho Encontrado (Seed={SEED})", color='green', fontsize=16)
+ 
+        # desenha linha mapa
+        path_y = [p[0] for p in agente.path]
+        path_x = [p[1] for p in agente.path]
+        ax_maze.plot(path_x, path_y, color='red', linewidth=3, label='Caminho Final') 
+        
+        # desenha grafo
+        grafo_vis.draw_graph(ax_graph, agente.explored_nodes, agente.path, GOAL_POS, show_all=True)
+        
+        fig.canvas.draw_idle()
+        
+    elif status == "no_path":
+        print("\n FALHA ")
+        fig.suptitle(f"FALHA - Sem Caminho (Seed={SEED})", color='red', fontsize=16)
+        
+    print("Simulação concluída.")
+    plt.ioff()
+    plt.show(block=True)
 
 if __name__ == "__main__":
-    sys.exit(main())
+    main()
+    gc.collect() # limpa memoria
