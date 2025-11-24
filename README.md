@@ -149,7 +149,7 @@ Contribuições são bem-vindas! Envie pull requests ou abra issues com sugestõ
 ## 🏅 Reconhecimentos e Direitos Autorais
 * Outros repositórios: https://github.com/MSCunha, https://github.com/gabrielaqueirxz
 
-* Agradecimentos: Universidade Federal do Maranhão (UFMA), Professor Alex Oliveira Barrados Filho, e colegas de curso.
+* Agradecimentos: Universidade Federal do Maranhão (UFMA), Professor Alex Oliveira Barradas Filho, e colegas de curso.
 
 
 ---
