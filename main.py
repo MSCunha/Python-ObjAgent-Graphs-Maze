@@ -13,11 +13,20 @@ from mazeGen import MazeGenerator
 from agente import Agente
 from grafos import visualizadorGrafos
 from acoes import VisualizadorAcoes
+import sys
 
 def main():
-  
     # defs labirinto
-    SEED = random.randint(0, 1000)
+    if len(sys.argv) > 1:
+        try:
+            SEED = int(sys.argv[1])
+            print(f"Seed manual fornecida: {SEED}")
+        except ValueError:
+            print("Valor de seed inválido. Usando seed aleatória.")
+            SEED = random.randint(0, 1000)
+    else:
+        SEED = random.randint(0, 1000)
+
     LARGURA = 16
     ALTURA = 16
 
@@ -58,7 +67,7 @@ def main():
     
     # cria figura 2 subplots
     fig = plt.figure(figsize=(18, 9))
-    fig.canvas.manager.window.state('zoomed')
+    fig.canvas.manager.window.attributes('-zoomed', True)
     fig.patch.set_facecolor('white')
     fig.suptitle(f"Simulação - Seed {SEED}", fontsize=16)
 
