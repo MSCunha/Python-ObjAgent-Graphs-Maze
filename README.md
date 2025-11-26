@@ -41,6 +41,8 @@ O programa:
 
  * Exibe o caminho final quando o objetivo é encontrado
 
+Você pode ver um curto vídeo explicativo e demonstrativo do projeto clicando [aqui](https://youtu.be/unJeexx_BUo?si=b_swa4bNMY462gD2)
+
 ---
 
 ### Estrutura do Projeto
