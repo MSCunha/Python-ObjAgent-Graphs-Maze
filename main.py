@@ -67,7 +67,26 @@ def main():
     
     # cria figura 2 subplots
     fig = plt.figure(figsize=(18, 9))
-    fig.canvas.manager.window.attributes('-zoomed', True)
+    manager = fig.canvas.manager
+
+    # tkinter para windows
+    try:
+        manager.window.state('zoomed')
+    except:
+        pass
+
+    # tkinter para linux
+    try:
+        manager.window.attributes('-zoomed', True)
+    except:
+        pass
+
+    # qt (linux / windows)
+    try:
+        manager.window.showMaximized()
+    except:
+        pass
+
     fig.patch.set_facecolor('white')
     fig.suptitle(f"Simulação - Seed {SEED}", fontsize=16)
 
